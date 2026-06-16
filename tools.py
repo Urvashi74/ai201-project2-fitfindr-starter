@@ -120,6 +120,8 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 
     Before writing code, fill in the Tool 2 section of planning.md.
     """
+    print(f"\n[suggest_outfit] received new_item:\n{new_item}\n")
+
     title    = new_item.get("title", "this item")
     style_tags = ", ".join(new_item.get("style_tags", []))
     colors   = ", ".join(new_item.get("colors", []))
@@ -196,6 +198,9 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
 
     Before writing code, fill in the Tool 3 section of planning.md.
     """
+    print(f"\n[create_fit_card] received outfit:\n{outfit}\n")
+    print(f"[create_fit_card] received new_item:\n{new_item}\n")
+
     if not outfit.strip():
         return (
             "Couldn't write a fit card — no outfit suggestion was available. "
