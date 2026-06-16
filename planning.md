@@ -66,7 +66,19 @@ If `outfit` is empty or whitespace-only, the tool returns an error string like "
 
 ### Additional Tools (if any)
 
-<!-- Copy the block above for any tools beyond the required three -->
+### Tool 4: estimate_price_fairness
+
+**What it does:**
+Compares an item's price against comparable listings in the dataset (same category, overlapping style tags) and returns a plain-language verdict: whether the price is a deal, fair, or above average relative to similar items.
+
+**Input parameters:**
+- `item` (dict): A listing dict — the item being evaluated. Uses `id`, `price`, `category`, and `style_tags` to find and score comparables.
+
+**What it returns:**
+A non-empty string verdict. Example: `"Fair price. The Y2K Baby Tee ($18) is right in line with 4 similar tops in the dataset (avg $21). Good value for excellent condition."` Always returns a string — never raises.
+
+**What happens if it fails or returns nothing:**
+If no comparable listings exist in the same category with overlapping style tags, returns `"Not enough comparable listings to estimate price fairness for this item."` No exception is raised. This is pure Python — no LLM call, no external dependency.
 
 ---
 

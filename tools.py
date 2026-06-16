@@ -237,3 +237,70 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
             f"just thrifted '{title}' for ${price} on {platform} "
             "and can't stop thinking about this outfit."
         )
+
+
+# ── Tool 4: estimate_price_fairness ──────────────────────────────────────────
+
+def estimate_price_fairness(item: dict) -> str:
+    """
+    Compare an item's price against comparable listings in the dataset and
+    return a plain-language verdict.
+
+    Args:
+        item: A listing dict (same format returned by search_listings).
+              Uses id, price, category, and style_tags to find comparables.
+
+    Returns:
+        A non-empty string verdict. Never raises an exception.
+        If no comparables exist, explains that rather than guessing.
+    """
+    item_price    = item.get("price")
+    item_category = item.get("category", "")
+    item_tags     = set(item.get("style_tags", []))
+    item_id       = item.get("id")
+    item_title    = item.get("title", "This item")
+    item_condition = item.get("condition", "")
+
+    if item_price is None:
+        return "Can't estimate price fairness — this item has no price listed."
+
+    all_listings = load_listings()
+
+    # Find comparables: same category, at least one overlapping style tag, not the item itself
+    comparables = [
+        l for l in all_listings
+        if l["id"] != item_id
+        and l["category"] == item_category
+        and set(l.get("style_tags", [])) & item_tags
+    ]
+
+    if not comparables:
+        return (
+            f"Not enough comparable listings to estimate price fairness for this item "
+            f"(no other {item_category} listings share its style tags)."
+        )
+
+    prices = [l["price"] for l in comparables]
+    avg    = sum(prices) / len(prices)
+    low    = min(prices)
+    high   = max(prices)
+    diff   = item_price - avg
+    pct    = (diff / avg) * 100
+
+    if pct <= -15:
+        verdict = "Great deal"
+        detail  = f"${item_price:.0f} is {abs(pct):.0f}% below the average for similar {item_category}."
+    elif pct <= 10:
+        verdict = "Fair price"
+        detail  = f"${item_price:.0f} is right in line with similar {item_category} (avg ${avg:.0f})."
+    else:
+        verdict = "Above average"
+        detail  = f"${item_price:.0f} is {pct:.0f}% above the average for similar {item_category}."
+
+    condition_note = f" Listed as {item_condition} condition." if item_condition else ""
+
+    return (
+        f"{verdict}. {item_title} (${item_price:.0f}) — {detail} "
+        f"Comparable {item_category} range from ${low:.0f}–${high:.0f} "
+        f"across {len(comparables)} similar listing(s).{condition_note}"
+    )
