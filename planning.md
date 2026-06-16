@@ -246,3 +246,102 @@ The agent calls `create_fit_card(outfit=<suggestion from step 2>, new_item=lst_0
 
 **Final output to user:**
 The user sees all three results surfaced together: the listing details (title, price, platform, condition), the outfit suggestion with specific wardrobe pairings and styling notes, and the fit card caption ready to copy. If any step failed, the user sees a plain-language explanation of what went wrong and what to try instead.
+
+## Implementation testing
+
+Commands used to test Tool 1 - search_listing():
+
+  # Test 1: multiple results, no filters
+  python -c "from tools import search_listings; results = 
+  search_listings('vintage graphic tee'); print([(r['id'], r['title'], 
+  # Test 1: multiple results, no filters
+  python -c "from tools import search_listings; results =
+  search_listings('vintage graphic tee'); print([(r['id'], r['title'],
+  r['price']) for r in results])"
+
+  # Test 2: no results (impossible query)
+
+  # Test 2: no results (impossible query)
+  print(search_listings('designer ballgown', size='XXS', max_price=5.0))"
+
+  # Test 3: size filter — 'M' should match 'S/M'
+  python -c "from tools import search_listings; results =
+  search_listings('tee', size='M'); print([(r['id'], r['title'], r['size'])
+  for r in results])"
+
+  # Test 4: price ceiling — nothing over $30
+  python -c "from tools import search_listings; results =
+  search_listings('vintage', max_price=30.0); print(all(r['price'] <= 30 for
+   r in results), [r['price'] for r in results])"
+
+Commands used to test Tool 2 - suggest_outfit():
+
+  # Test 1: with example wardrobe — should name specific wardrobe pieces
+  python -c "
+  from tools import suggest_outfit, search_listings
+  from utils.data_loader import get_example_wardrobe
+  item = search_listings('vintage graphic tee', max_price=30.0)[0]
+  print('Item:', item['title']) 
+  print(suggest_outfit(item, get_example_wardrobe()))
+  "
+  
+  # Test 2: empty wardrobe — should give general advice, not crash or return '' 
+  python -c "
+  from tools import suggest_outfit, search_listings
+  from utils.data_loader import get_empty_wardrobe
+  item = search_listings('vintage graphic tee', max_price=30.0)[0]
+  result = suggest_outfit(item, get_empty_wardrobe())
+  print('Non-empty?', bool(result))
+  print(result)
+  "
+  
+  # Test 3: LLM exception fallback — pass a bad API key to force failure
+  python -c "
+  import os; os.environ['GROQ_API_KEY'] = 'bad-key'
+  from tools import suggest_outfit, search_listings
+  from utils.data_loader import get_example_wardrobe
+  item = search_listings('flannel', max_price=50.0)[0]
+  result = suggest_outfit(item, get_example_wardrobe())
+  print('Fallback returned?', 'color palette' in result)
+  print(result)
+  "
+
+Commands used to test Tool 3 - create_fit_card(): 
+
+  # Check 1: empty outfit guard — should return error string, no 
+  LLM call
+  python -c "
+  from tools import create_fit_card, search_listings
+  item = search_listings('vintage graphic tee', max_price=30.0)[0]
+  print(create_fit_card('', item))
+  "
+
+  # Check 2: prompt includes name, price, platform — verify they 
+  appear in output
+  python -c "
+  from tools import create_fit_card, suggest_outfit, 
+  search_listings
+  from tools import create_fit_card, suggest_outfit, search_listings
+  from utils.data_loader import get_example_wardrobe
+  item = search_listings('vintage graphic tee', max_price=30.0)[0]
+  outfit = suggest_outfit(item, get_example_wardrobe())
+  result = create_fit_card(outfit, item)
+  print('Has title?   ', item['title'] in result)
+  print('Has price?   ', str(item['price']) in result)
+  print('Has platform?', item['platform'] in result)
+  print()
+  print(result)
+  "
+
+  # Check 3: same input, three runs — verify outputs differ
+  python -c "
+  from tools import create_fit_card, suggest_outfit, search_listings
+  from utils.data_loader import get_example_wardrobe
+  item = search_listings('vintage graphic tee', max_price=30.0)[0]
+  outfit = suggest_outfit(item, get_example_wardrobe())
+  runs = [create_fit_card(outfit, item) for _ in range(3)]
+  for i, r in enumerate(runs, 1):
+      print(f'Run {i}:', r)
+      print()
+  print('All different?', len(set(runs)) == 3)
+  "
