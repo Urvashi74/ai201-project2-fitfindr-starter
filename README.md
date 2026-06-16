@@ -175,6 +175,14 @@ Key handoffs:
 
 ---
 
+## Spec Reflection
+
+**One way the spec helped:** Writing the Error Handling table in `planning.md` before implementing forced a precise decision about the empty-wardrobe case in `suggest_outfit`. The spec required documenting the exact agent response — not just "handle gracefully" — which surfaced that the right behavior was a prompt switch (general advice), not an error message. Without that upfront decision, the implementation would likely have returned `""` or raised, and the agent would have crashed at Step 3.
+
+**One divergence and why:** The spec described `suggest_outfit` as suggesting outfits "by matching style tags and color palettes" — implying the matching logic would be in Python. In practice, that matching is done entirely by the LLM: the wardrobe items are formatted into the prompt and the LLM finds the combinations. The Python code just formats the input and parses the output. This approach produced more natural, specific suggestions than a rule-based tag-matcher would have, and required less code to maintain.
+
+---
+
 ## AI Usage
 
 ### Instance 1 — Implementing `search_listings()`
